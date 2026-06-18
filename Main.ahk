@@ -2247,14 +2247,6 @@ SellTower(towerID) {
     Sleep, 50
     return false
 }
-k::
-ExecuteStep(SpawnTower(871, 498, 1, 5))
-ExecuteStep(UpgradeTower(5))
-ExecuteStep(UpgradeTower(5))
-ExecuteStep(UpgradeTower(5))
-ExecuteStep(UpgradeTower(5, false, 1, 1, 4))
-ExecuteStep(UpgradeTower(5, false, 1, 1, 4))
-Return
 
 UpgradeTower(towerID, skipOpen := false, totalUpgrades := 1, path := 0, pathLevel := 0) {
     global Towers, unfocusX, unfocusY, LastOpenedTowerID, Path1Region, Path2Region, DefaultUpgradeRegion
