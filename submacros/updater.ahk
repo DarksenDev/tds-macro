@@ -64,7 +64,6 @@ CheckForUpdate(currentVer) {
                     ; %3 - delete old version (1=yes)
                     
                     updateBat := A_ScriptDir "\submacros\update.bat"
-                    MsgBox, %updateBat%
                     
                     if FileExist(updateBat) {
                         RunWait, %updateBat% "%downloadURL%" "%A_ScriptDir%" 1
