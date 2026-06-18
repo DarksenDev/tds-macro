@@ -93,7 +93,7 @@ Loop
         ImageSearch, FoundX, FoundY, 620, 379, 1334, 850, *50 %GameOverUI%
         if (ErrorLevel = 0)
         {
-            SendScreenshot("Game over", "GameOver")
+            SendScreenshot("Match is ended.", "GameOver")
             Sleep, 10000
         }
     

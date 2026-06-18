@@ -22,7 +22,7 @@ if (RegExMatch(A_ScriptDir,"\.zip")){
 #Include %A_ScriptDir%\lib\Gdip_All.ahk
 #Include %A_ScriptDir%\lib\ocr.ahk
 
-ver := "1.2" 
+ver := "1.2.1" 
 
 pToken := Gdip_Startup()
 OnExit, CleanupGdip
@@ -210,6 +210,8 @@ global InputHookObj := ""
 
 global LastSkipCheck := 0
 
+global AutorunStartTime := 0
+
 global CheckerPID := ""
 global DiscordPID := ""
 
@@ -223,6 +225,10 @@ if FileExist(IconPath)
 
 IniRead, autoRun, %StateFile%, State, Running, 0
 IniRead, autoStrat, %StateFile%, State, Strategy, %A_Space%
+IniRead, savedStartTime, %StateFile%, State, StartTime, 0
+if (savedStartTime != 0) {
+    AutorunStartTime := savedStartTime
+}
 
 if (autoRun = 1 && autoStrat != "" && FileExist(autoStrat)) {
     LoadStrategyFile(autoStrat)
@@ -402,6 +408,10 @@ return
 
 IniRead, autoRun, %StateFile%, State, Running, 0
 IniRead, autoStrat, %StateFile%, State, Strategy, %A_Space%
+IniRead, savedStartTime, %StateFile%, State, StartTime, 0
+if (savedStartTime != 0) {
+    AutorunStartTime := savedStartTime
+}
 if (autoRun = 1 && autoStrat != "" && FileExist(autoStrat)) {
     Gui, Main:Hide
     LoadStrategyFile(autoStrat)
@@ -417,7 +427,12 @@ Esc::
     KillSubmacros()
     
     if (RunningStrategy) {
-        LogToConsole("Stopping the macro..")
+        if (AutorunStartTime > 0) {
+            runtime := FormatRuntime(AutorunStartTime)
+            LogToConsole("Strategy stopped. Runtime: " . runtime)
+            IniDelete, %StateFile%, State, StartTime
+            AutorunStartTime := 0
+        }
         DeleteAllIndicators()
         IniWrite, 0, %StateFile%, State, Running
         IniWrite, 0, %StateFile%, State, Strategy
@@ -912,7 +927,7 @@ ShowSettingsGUI() {
         GuiControl, Main:Show, StopButton
 
         LogToConsole("Recording started:")
-        LogToConsole("- MButton: place tower")
+        LogToConsole("- Mouse Wheel Button: place tower")
         LogToConsole("- Ctrl+U: upgrade")
         LogToConsole("- Ctrl+D: set DJ track")
         LogToConsole("- Ctrl+T: Align Camera")
@@ -1284,6 +1299,14 @@ RunStrategy() {
     LogToConsole("Required Towers: " requiredTowers)
     if (modifiers != "") {
         LogToConsole("Modifiers: " modifiers)
+    }
+
+    IniRead, checkStart, %StateFile%, State, StartTime, 0
+    if (checkStart = 0) {
+        IniWrite, %A_TickCount%, %StateFile%, State, StartTime
+        AutorunStartTime := A_TickCount
+    } else {
+        AutorunStartTime := checkStart
     }
 
     if (difficulty != "Hardcore" and difficulty != "Voidcore")
@@ -1972,15 +1995,28 @@ SelectMap() {
         Click, 748, 360
         Sleep, 700
         
-        pBitmap := Gdip_BitmapFromScreen("840|250|260|200")
+        changedMap := false
+        
+        pBitmap := Gdip_BitmapFromScreen("840|250|300|200")
         result := ocrFromBitmap(pBitmap)
         Gdip_DisposeImage(pBitmap)
 
+        if InStr(result, map) || InStr(result, "changed") {
+            changedMap := true
+            LogToConsole("Map successfully changed to " map)
+        }
+        
         if InStr(result, "already") || InStr(result, "rotation") || InStr(result, "current") {
             LogToConsole(map " is already in the current rotation! Reloading..")
             Sleep, 200
             SafeReload()
             Sleep, 400
+        }
+
+        if (!changedMap) {
+            LogToConsole("Failed to change the map! Reloading..")
+            Sleep, 200
+            SafeReload()
         }
         
         if (modifiers != "") {
@@ -2023,7 +2059,26 @@ SelectMap() {
         SendEvent, {sc01e up}
         Sleep, 200
         SendEvent, {sc011 down} ; W 
-        Sleep, 2200
+        Sleep, 1600
+        SendEvent, {sc011 up}
+        Sleep, 100
+
+        LogToConsole("Trying to find: " map ". Please wait..")
+
+        pBitmap := Gdip_BitmapFromScreen("0|0|" A_ScreenWidth "|" A_ScreenHeight)
+        result := ocrFromBitmap(pBitmap)
+        Gdip_DisposeImage(pBitmap)
+
+        if InStr(result, map)
+        {
+            LogToConsole("Found " map ". Going to it")
+        } Else {
+            LogToConsole("Can't find the map: " map "! Reloading") 
+        }
+
+        sleep, 400
+        SendEvent, {sc011 down} ; W 
+        Sleep, 600
         SendEvent, {sc011 up}
         Sleep, 200
         SendEvent, {sc01e down} ; A 
@@ -2065,7 +2120,6 @@ SelectMap() {
 
     Sleep, 100
 }
-
 
 LoadGame() {
     Loop {
@@ -2161,25 +2215,31 @@ SpawnTower(X, Y, slotNumber, towerID) {
         Send, {q}
 
         placedSuccessfully := false
-        Loop, 35 {
+        Loop, 25 {
             ImageSearch, FoundX, FoundY, 1251, 501, 1369, 590, *80 Resources\TowerUI\Variant1.png
+            If (ErrorLevel)
+                ImageSearch, FoundX, FoundY, 663, 843, 933, 909, *50 Resources\TowerUI\Variant2.png
+            If (ErrorLevel)
+                ImageSearch, FoundX, FoundY, 661, 723, 712, 773, *50 Resources\TowerUI\Variant3.png
+
             if (!ErrorLevel) {
                 placedSuccessfully := true
                 break
             }
-            Sleep, 30
-            ImageSearch, FoundX, FoundY, 663, 843, 933, 909, *50 Resources\TowerUI\Variant2.png
-            if (!ErrorLevel) {
-                placedSuccessfully := true
-                break
+
+            If (ErrorLevel)
+            {
+                pBitmap := Gdip_BitmapFromScreen("725|709|400|200")
+                result := ocrFromBitmap(pBitmap)
+                Gdip_DisposeImage(pBitmap)
+
+                if InStr(result, "Targets") || InStr(result, "targets") || InStr(result, "target") {
+                    placedSuccessfully := True
+                    break
+                }
             }
             Sleep, 30
-            ImageSearch, FoundX, FoundY, 661, 723, 712, 773, *50 Resources\TowerUI\Variant3.png
-            if (!ErrorLevel) {
-                placedSuccessfully := true
-                break
-            }
-            Sleep, 30
+            
         }  
 
         if (placedSuccessfully) {
@@ -2286,10 +2346,8 @@ UpgradeTower(towerID, skipOpen := false, totalUpgrades := 1, path := 0, pathLeve
                 Click, %targetX%, %targetY%
                 Sleep, 150
                 Continue
-            }
-            
-            if (!skipOpen) {
-                Random, VariationY, -10, 10
+            } else {
+                Random, VariationY, -8, 8
                 shiftedY := targetY + VariationY
                 Click, %targetX%, %shiftedY%
                 Sleep, 100
@@ -2320,7 +2378,7 @@ UpgradeTower(towerID, skipOpen := false, totalUpgrades := 1, path := 0, pathLeve
             upgradeAttempts := 0
             Loop {
                 Click, %UpgradeX%, %UpgradeY%
-                Sleep, 80
+                Sleep, 250
                 break
             }
             
@@ -2343,6 +2401,7 @@ UpgradeTower(towerID, skipOpen := false, totalUpgrades := 1, path := 0, pathLeve
         }
     }
 }
+
 ;CheckCritical() {
     ;CheckDisconnected()
     ;ImageSearch, FoundX, FoundY, 620, 379, 1334, 850, *80 Resources\triumph.png
@@ -2807,9 +2866,32 @@ LogToConsole(text) {
     if (OverlayHWND && WinExist("ahk_id " OverlayHWND))
         UpdateOverlay()
     
-    if (WebhookEnabled && WebhookLink != "") {
-        SendToWebhook(formattedText)
+    if (WebhookEnabled && WebhookLink != "" && RunningStrategy) {
+        if (AutorunStartTime > 0) {
+            runtime := FormatRuntime(AutorunStartTime)
+            webhookText := "[" . runtime . "] " . text
+        } else {
+            webhookText := "[00:00] " . text
+        }
+        SendToWebhook(webhookText)
     }
+}
+
+FormatRuntime(StartTicks) {
+    if (StartTicks = 0)
+        return "00:00"
+    
+    elapsedMs := A_TickCount - StartTicks
+    elapsedSeconds := Floor(elapsedMs / 1000)
+    
+    hours := Floor(elapsedSeconds / 3600)
+    minutes := Floor(Mod(elapsedSeconds, 3600) / 60)
+    seconds := Mod(elapsedSeconds, 60)
+    
+    if (hours > 0)
+        return Format("{:d}:{:02d}:{:02d}", hours, minutes, seconds)
+    else
+        return Format("{:d}:{:02d}", minutes, seconds)
 }
 
 SendToWebhook(message) {
@@ -3037,7 +3119,6 @@ return
 CancelPathSelect:
     Gui, PathSelect:Destroy
 return
-
 
 ErrorCheckContinue:
     Gui, ErrorCheck:Submit, NoHide
