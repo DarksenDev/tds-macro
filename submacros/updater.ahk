@@ -1,13 +1,12 @@
-﻿#Requires AutoHotkey v1.1
+#Requires AutoHotkey v1.1
 #NoEnv
 #SingleInstance, force
 
 VERSION_URL := "https://raw.githubusercontent.com/DarksenDev/tds-macro/refs/heads/main/information.ini"
-SCRIPT_DIR := A_ScriptDir
+SCRIPT_DIR := A_ScriptDir 
 TEMP_DIR := A_Temp "\TDSMacroUpdate"
 
 if (A_LineFile = A_ScriptFullPath) {
-    CheckForUpdate("unknown")
     ExitApp
 }
 
@@ -64,7 +63,8 @@ CheckForUpdate(currentVer) {
                     ; %2 - Current macro folder
                     ; %3 - delete old version (1=yes)
                     
-                    updateBat := A_ScriptDir "\update.bat"
+                    updateBat := A_ScriptDir "\submacros\update.bat"
+                    MsgBox, %updateBat%
                     
                     if FileExist(updateBat) {
                         RunWait, %updateBat% "%downloadURL%" "%A_ScriptDir%" 1
