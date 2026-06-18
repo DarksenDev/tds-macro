@@ -20,6 +20,7 @@ if (RegExMatch(A_ScriptDir,"\.zip")){
 }
 
 #Include %A_ScriptDir%\lib\Gdip_All.ahk
+#Include %A_ScriptDir%\lib\ocr.ahk
 
 ver := "1.2" 
 
@@ -1971,8 +1972,11 @@ SelectMap() {
         Click, 748, 360
         Sleep, 700
         
-        PixelSearch, FoundX, FoundY, 840, 250, 1100, 450, 0x0000EC, 0, Fast
-        if (ErrorLevel = 0) {
+        pBitmap := Gdip_BitmapFromScreen("840|250|260|200")
+        result := ocrFromBitmap(pBitmap)
+        Gdip_DisposeImage(pBitmap)
+
+        if InStr(result, "already") || InStr(result, "rotation") || InStr(result, "current") {
             LogToConsole(map " is already in the current rotation! Reloading..")
             Sleep, 200
             SafeReload()
