@@ -21,8 +21,11 @@ GameOverUI := ResourcesDir "\GameOverUI.png"
 
 SetBatchLines, -1
 
-Sleep, 10000
-WinWait, ahk_exe RobloxPlayerBeta.exe, , 60
+Opt := A_AppData "\Ultimate_Macro\Macros\TDSMacro\Options"
+SettingsFile := Opt "\Settings.tds"
+
+Sleep, 15000
+WinWait, ahk_exe RobloxPlayerBeta.exe, , 55
 Loop {
     Process, Exist, %MainPID%
     if !ErrorLevel {
@@ -79,18 +82,18 @@ Loop {
 return
 
 RestartMain() {
-    global MainPID
+    global MainPID, SettingsFile
     Process, Close, %MainPID%
 
     IniRead, WebhookLink, %SettingsFile%, Webhook, Link, %A_Space%
     IniRead, tempWebhook, %SettingsFile%, Webhook, Enabled, OFF
-    WebhookEnabled := (tempWebhook = "ON" || tempWebhook = "1") ? true : false
+    WebhookEnabled := (tempWebhook = "1") ? true : false
 
     if (!WebhookEnabled || WebhookLink = "")
     {
         Sleep, 2000
     } else {
-        Sleep, 6000
+        Sleep, 8000
     }
 
     Run, "%A_WorkingDir%\Main.ahk"

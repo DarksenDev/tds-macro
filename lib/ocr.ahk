@@ -1,5 +1,5 @@
-#Include %A_ScriptDir%\lib\Gdip_All.ahk
-#Include %A_ScriptDir%\lib\Gdip_ImageSearch.ahk
+#Include %A_LineFile%\..\Gdip_All.ahk
+#Include %A_LineFile%\..\Gdip_ImageSearch.ahk
 
 /*
 OCR with UWP API by malcev

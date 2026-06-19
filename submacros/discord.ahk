@@ -9,20 +9,24 @@ if 0 < 1
 }
 
 MainPID := %1%
-SetWorkingDir, %A_ScriptDir%\..\AppData
+SetWorkingDir, %A_LineFile%\..\..\
 Opt := A_AppData "\Ultimate_Macro\Macros\TDSMacro\Options"
 SettingsFile := Opt "\Settings.tds"
+StateFile := A_AppData "\Ultimate_Macro\Macros\TDSMacro\state.ini"
+
 
 IniRead, WebhookLink, %SettingsFile%, Webhook, Link, %A_Space%
 IniRead, tempWebhook, %SettingsFile%, Webhook, Enabled, OFF
 WebhookEnabled := (tempWebhook = "ON" || tempWebhook = "1") ? true : false
+IniRead, SendCurrenciesEnabled, %SettingsFile%, Webhook, SendCurrencies, 1
 
 if (!WebhookEnabled || WebhookLink = "")
 {
     ExitApp
 }
 
-#Include %A_ScriptDir%\..\lib\Gdip_All.ahk
+#Include %A_LineFile%\..\..\lib\Gdip_All.ahk
+#Include %A_LineFile%\..\..\lib\ocr.ahk
 
 pToken := Gdip_Startup()
 SetBatchLines, -1
@@ -38,69 +42,180 @@ TriumphImg2 := ResourcesDir "\PlayAgain.png"
 YouLostImg := ResourcesDir "\YouLost.png"
 GameOverUI := ResourcesDir "\GameOverUI.png"
 
-Sleep, 7000
-WinWait, ahk_exe RobloxPlayerBeta.exe, , 60
+WinWait, ahk_exe RobloxPlayerBeta.exe, , 55
+Sleep, 15000
+
 Loop
 {
-    Process, Exist, %MainPID%
-    if !ErrorLevel
+    if WinExist("Roblox Crash")
     {
-        Gdip_Shutdown(pToken)
-        ExitApp
+        SendScreenshot("Roblox has crashed", "RobloxCrash")
+        Sleep, 10000
+    }
+    
+    ImageSearch, FoundX, FoundY, 0, 0, A_ScreenWidth, A_ScreenHeight, *15 %DisconnectedImg%
+    if (ErrorLevel = 0)
+    {
+        SendScreenshot("Disconnected from the game", "Disconnected")
+        Sleep, 10000
+    }
+    
+    ImageSearch, FoundX, FoundY, 0, 0, A_ScreenWidth, A_ScreenHeight, *15 %DisconnectedImg2%
+    if (ErrorLevel = 0)
+    {
+        SendScreenshot("Disconnected from the game", "Disconnected")
+        Sleep, 10000
+    }
+    
+    ImageSearch, FoundX, FoundY, 620, 379, 1334, 850, *80 %TriumphImg1%
+    if (ErrorLevel = 0) {
+        SendScreenshot("Triumph!", "Triumph")
+        SendCurrencies("Triumph")
+        Sleep, 10000
+    }
+    
+    ImageSearch, FoundX, FoundY, 620, 379, 1334, 850, *80 %TriumphImg2%
+    if (ErrorLevel = 0) {
+        SendScreenshot("Triumph!", "PlayAgain")
+        SendCurrencies("Triumph")
+        Sleep, 10000
     }
 
-        if WinExist("Roblox Crash")
-        {
-            SendScreenshot("Roblox has crashed", "RobloxCrash")
-            Sleep, 10000
-        }
-        
-        ImageSearch, FoundX, FoundY, 0, 0, A_ScreenWidth, A_ScreenHeight, *15 %DisconnectedImg%
-        if (ErrorLevel = 0)
-        {
-            SendScreenshot("Disconnected from the game", "Disconnected")
-            Sleep, 10000
-        }
-        
-        ImageSearch, FoundX, FoundY, 0, 0, A_ScreenWidth, A_ScreenHeight, *15 %DisconnectedImg2%
-        if (ErrorLevel = 0)
-        {
-            SendScreenshot("Disconnected from the game", "Disconnected")
-            Sleep, 10000
-        }
+    ImageSearch, FoundX, FoundY, 620, 379, 1334, 850, *80 %YouLostImg%
+    if (ErrorLevel = 0) {
+        SendScreenshot("You lost!", "YouLost")
+        SendCurrencies("Loss")
+        Sleep, 10000
+    }
+
+    ImageSearch, FoundX, FoundY, 620, 379, 1334, 850, *50 %GameOverUI%
+    if (ErrorLevel = 0)
+    {
+        matchResult := "Unknown"
         
         ImageSearch, FoundX, FoundY, 620, 379, 1334, 850, *80 %TriumphImg1%
+        if (ErrorLevel = 1)
+            ImageSearch, FoundX, FoundY, 620, 379, 1334, 850, *80 %TriumphImg2%
+        
         if (ErrorLevel = 0)
         {
+            matchResult := "Triumph"
             SendScreenshot("Triumph!", "Triumph")
-            Sleep, 10000
+        } else {
+            ImageSearch, FoundX, FoundY, 620, 379, 1334, 850, *80 %YouLostImg%
+            if (ErrorLevel = 0)
+            {
+                matchResult := "Loss"
+                SendScreenshot("You lost!", "YouLost")
+            } else {
+                SendScreenshot("Failed to determinate triumph or loss. Match is ended.", "GameOver")
+            }
         }
-        
-        ImageSearch, FoundX, FoundY, 620, 379, 1334, 850, *80 %TriumphImg2%
-        if (ErrorLevel = 0)
-        {
-            SendScreenshot("Triumph!", "PlayAgain")
-            Sleep, 10000
-        }
-        
-        ImageSearch, FoundX, FoundY, 620, 379, 1334, 850, *80 %YouLostImg%
-        if (ErrorLevel = 0)
-        {
-            SendScreenshot("You lost!", "YouLost")
-            Sleep, 10000
-        }
-        
-        ImageSearch, FoundX, FoundY, 620, 379, 1334, 850, *50 %GameOverUI%
-        if (ErrorLevel = 0)
-        {
-            SendScreenshot("Match is ended.", "GameOver")
-            Sleep, 10000
-        }
+
+        SendCurrencies(matchResult)
+        Sleep, 10000
+    }
     
-    
-    Sleep, 200
+    Sleep, 400
 }
 return
+
+SendCurrencies(matchResult := "")
+{
+    global WebhookLink, StateFile, SendCurrenciesEnabled
+
+    if (SendCurrenciesEnabled = 0)
+    {
+        return
+    }
+    
+    AreaW := 400
+    AreaH := 200
+    SearchArea := "638|540|" . AreaW . "|" . AreaH
+    
+    pBitmapArea := Gdip_BitmapFromScreen(SearchArea)
+    
+    pBitmapResized := Gdip_CreateBitmap(AreaW * 3, AreaH * 3)
+    G1 := Gdip_GraphicsFromImage(pBitmapResized)
+    DllCall("gdiplus\GdipSetInterpolationMode", "Ptr", G1, "Int", 7)
+    Gdip_DrawImage(G1, pBitmapArea, 0, 0, AreaW * 3, AreaH * 3, 0, 0, AreaW, AreaH)
+    
+    ocrResult := ocrFromBitmap(pBitmapResized)
+    
+    Gdip_DeleteGraphics(G1)
+    Gdip_DisposeImage(pBitmapResized)
+    Gdip_DisposeImage(pBitmapArea)
+
+    coinVal := 0
+    gemVal := 0
+
+    if RegExMatch(ocrResult, "i)(\d[\d,]*)\s*Coin", coinsMatch)
+        coinVal := StrReplace(coinsMatch1, ",", "")
+    
+    if RegExMatch(ocrResult, "i)(\d[\d,]*)\s*Gem", gemsMatch)
+        gemVal := StrReplace(gemsMatch1, ",", "")
+    
+    IniRead, totalTriumphs, %StateFile%, State, TotalTriumphs, 0
+    IniRead, totalLosses, %StateFile%, State, TotalLosses, 0
+    
+    if (matchResult = "Triumph")
+    {
+        totalTriumphs += 1
+        IniWrite, %totalTriumphs%, %StateFile%, State, TotalTriumphs
+    }
+    else if (matchResult = "Loss")
+    {
+        totalLosses += 1
+        IniWrite, %totalLosses%, %StateFile%, State, TotalLosses
+    }
+    
+    IniRead, startCoins, %StateFile%, State, StartCoins, 0
+    IniRead, startGems, %StateFile%, State, StartGems, 0
+    IniRead, savedCoins, %StateFile%, State, Coins, 0
+    IniRead, savedGems, %StateFile%, State, Gems, 0
+    
+    totalCoins := savedCoins + coinVal
+    totalGems := savedGems + gemVal
+    
+    IniDelete, %StateFile%, State, Coins
+    IniDelete, %StateFile%, State, Gems
+    IniWrite, %totalCoins%, %StateFile%, State, Coins
+    IniWrite, %totalGems%, %StateFile%, State, Gems
+    
+    earnedCoins := totalCoins - startCoins
+    earnedGems := totalGems - startGems
+    
+    IniRead, autorunStart, %StateFile%, State, StartTime, 0
+    if (autorunStart > 0) {
+        elapsedMs := A_TickCount - autorunStart
+        elapsedHours := elapsedMs / 3600000
+        coinsPerHour := (elapsedHours > 0.001) ? Round(earnedCoins / elapsedHours) : 0
+        gemsPerHour := (elapsedHours > 0.001) ? Round(earnedGems / elapsedHours) : 0
+    } else {
+        coinsPerHour := 0
+        gemsPerHour := 0
+    }
+    
+    description := "Coins: " . totalCoins . " (+" . earnedCoins . ")`n"
+    description .= "Gems: " . totalGems . " (+" . earnedGems . ")`n"
+    description .= "Total Triumphs: " . totalTriumphs . ", Total Losses: " . totalLosses . "`n"
+    description .= "`n"
+    description .= "📊 " . coinsPerHour . " Coins/hr | " . gemsPerHour . " Gems/hr"
+    
+    description := StrReplace(description, "\", "\\")
+    description := StrReplace(description, """", "\""")
+    description := StrReplace(description, "`n", "\n")
+
+    jsonPayload := "{""embeds"": [{""title"": ""Currencies"", ""description"": """ . description . """, ""color"": 5814783}]}"
+    
+    try {
+        whr := ComObjCreate("WinHttp.WinHttpRequest.5.1")
+        whr.Open("POST", WebhookLink, false)
+        whr.SetRequestHeader("Content-Type", "application/json")
+        whr.Send(jsonPayload)
+    } catch e {
+    }
+}
 
 TakeRandomScreenshot:
     global WebhookEnabled, WebhookLink
@@ -131,7 +246,7 @@ SendScreenshot(description, cType := 3447003)
         if (cType = "Triumph" || cType = "PlayAgain")
             color := 3066993
         else if (cType = "YouLost" || cType = "GameOver")
-            color := 16744192
+            color := 12434877
         else if (cType = "RobloxNotRunning" || cType = "RobloxCrash")
             color := 16711680
         
@@ -143,17 +258,12 @@ SendScreenshot(description, cType := 3447003)
 SendEmbedScreenshot(pBitmap, description, color)
 {
     global WebhookLink
-    
+
     escapedDescription := StrReplace(description, "\", "\\")
     escapedDescription := StrReplace(escapedDescription, """", "\""")
     escapedDescription := StrReplace(escapedDescription, "`n", "\n")
     
-    payload_json := "{"
-    payload_json .= """embeds"": [{"
-    payload_json .= """description"": """ escapedDescription ""","
-    payload_json .= """color"": " color ","
-    payload_json .= """image"": {""url"": ""attachment://screenshot.png""}"
-    payload_json .= "}]}"
+    payload_json := "{""embeds"": [{""description"": """ . escapedDescription . """, ""color"": " . color . ", ""image"": {""url"": ""attachment://screenshot.png""}}]}"
     
     fields := Object()
     fields[1] := Object("name", "payload_json", "content-type", "application/json", "content", payload_json)

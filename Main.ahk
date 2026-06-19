@@ -22,7 +22,7 @@ if (RegExMatch(A_ScriptDir,"\.zip")){
 #Include %A_ScriptDir%\lib\Gdip_All.ahk
 #Include %A_ScriptDir%\lib\ocr.ahk
 
-ver := "1.2.1" 
+ver := "1.2.2" 
 
 pToken := Gdip_Startup()
 OnExit, CleanupGdip
@@ -43,118 +43,14 @@ IfNotExist, %AppDataOpt%
 IfNotExist, %RecordingsDir%
     FileCreateDir, %RecordingsDir%
 
+; INIREADS
 IniRead, VipLink, %SettingsFile%, Options, VipLink, %A_Space%
 IniRead, UseVipServer, %SettingsFile%, Options, UseVipServer, 0
 IniRead, AutoCameraCheck, %SettingsFile%, Options, AutoCameraCheck, 1
 IniRead, WebhookLink, %SettingsFile%, Webhook, Link, %A_Space%
 IniRead, WebhookEnabled, %SettingsFile%, Webhook, Enabled, 0
-
-global MapDetectorPath := AppDataOpt "\map_detector\map_detector.exe"
-global TargetFolder := AppDataOpt "\map_detector"
-
-if !FileExist(MapDetectorPath) {
-    Gui, Progress:New, +AlwaysOnTop -Caption +Border
-    Gui, Color, 1E1E1E
-    
-    Gui, Add, Progress, x10 y10 w280 h20 Background333333 c3A86FF vProgressBar, 0
-    
-    Gui, Font, s10 w400 cFFFFFF, Segoe UI
-    Gui, Add, Text, x10 y40 w280 h20 Center vStatusText, Starting download...
-    
-    Gui, Font, s9 w400 c888888
-    Gui, Add, Text, x10 y65 w280 h20 Center, TDS Macro - Installing Dependencies
-    
-    Gui, Show, w300 h95, TDS Macro
-    
-    OnMessage(0x0201, "WM_LBUTTONDOWN_Progress")
-    
-    Sleep, 500
-    
-    ZipPath := A_Temp "\map_detector.zip"
-    
-    if FileExist(ZipPath)
-        FileDelete, %ZipPath%
-        
-    if InStr(FileExist(TargetFolder), "D")
-        FileRemoveDir, %TargetFolder%, 1
-    
-    GuiControl,, StatusText, Downloading map_detector.zip...
-    GuiControl,, ProgressBar, 25
-    
-    try {
-        whr := ComObjCreate("WinHttp.WinHttpRequest.5.1")
-        whr.Open("GET", "https://github.com/DarksenDev/tds-macro/releases/download/asd/map_detector.zip", true)
-        whr.Option(6) := 1
-        whr.Send()
-        whr.WaitForResponse()
-        
-        if (whr.Status != 200)
-            throw
-            
-        ADO := ComObjCreate("ADODB.Stream")
-        ADO.Type := 1
-        ADO.Open()
-        ADO.Write(whr.ResponseBody)
-        ADO.SaveToFile(ZipPath, 2)
-        ADO.Close()
-    } catch {
-        UrlDownloadToFile, https://github.com/DarksenDev/tds-macro/releases/download/asd/map_detector.zip, %ZipPath%
-    }
-    
-    if !FileExist(ZipPath) {
-        Gui, Progress:Destroy
-        MsgBox, 48, Error, Failed to download map_detector.zip! Check your internet connection.
-        ExitApp
-    }
-    
-    FileGetSize, zipSize, %ZipPath%, K
-    if (zipSize < 1) {
-        Gui, Progress:Destroy
-        MsgBox, 48, Error, Downloaded file is corrupted or empty!
-        ExitApp
-    }
-    
-    GuiControl,, StatusText, Extracting files...
-    GuiControl,, ProgressBar, 75
-    
-    FileCreateDir, %TargetFolder%
-    
-    extractCmd := ComSpec " /c tar -xf """ ZipPath """ -C """ TargetFolder """"
-    RunWait, %extractCmd%, , Hide
-    
-    NestedFolder := TargetFolder "\map_detector"
-    if InStr(FileExist(NestedFolder), "D") {
-        Loop, Files, %NestedFolder%\*, D
-        {
-            FileMoveDir, %A_LoopFileFullPath%, %TargetFolder%\%A_LoopFileName%, 1
-        }
-        Loop, Files, %NestedFolder%\*, F
-        {
-            FileMove, %A_LoopFileFullPath%, %TargetFolder%\*, 1
-        }
-        Sleep, 500
-        FileRemoveDir, %NestedFolder%, 1
-    }
-    
-    GuiControl,, StatusText, Cleaning up...
-    GuiControl,, ProgressBar, 90
-    Sleep, 500
-    
-    if FileExist(ZipPath)
-        FileDelete, %ZipPath%
-    
-    if !FileExist(MapDetectorPath) {
-        Gui, Progress:Destroy
-        MsgBox, 48, Error, Failed to install map_detector.exe!`n`nPlease temporarily disable your Antivirus or Windows Defender and try again.
-        ExitApp
-    }
-    
-    GuiControl,, StatusText, Installation complete!
-    GuiControl,, ProgressBar, 100
-    Sleep, 1000
-    Gui, Progress:Destroy
-}
-
+IniRead, PotatoMode, %SettingsFile%, Options, PotatoMode, 1
+IniRead, SendCurrenciesEnabled, %SettingsFile%, Webhook, SendCurrencies, 1
 
 WM_LBUTTONDOWN_Progress() {
     PostMessage, 0xA1, 2,,, A
@@ -429,13 +325,32 @@ Esc::
     if (RunningStrategy) {
         if (AutorunStartTime > 0) {
             runtime := FormatRuntime(AutorunStartTime)
+            
+            IniRead, startCoins, %StateFile%, State, StartCoins, 0
+            IniRead, startGems, %StateFile%, State, StartGems, 0
+            IniRead, earnedCoins, %StateFile%, State, Coins, 0
+            IniRead, earnedGems, %StateFile%, State, Gems, 0
+            
+            coinsEarned := earnedCoins - startCoins
+            gemsEarned := earnedGems - startGems
+            
             LogToConsole("Strategy stopped. Runtime: " . runtime)
+            if (startCoins > 0 || startGems > 0) {
+                LogToConsole("Coins earned: " . coinsEarned . " | Gems earned: " . gemsEarned)
+            }
+            
             IniDelete, %StateFile%, State, StartTime
             AutorunStartTime := 0
         }
         DeleteAllIndicators()
         IniWrite, 0, %StateFile%, State, Running
         IniWrite, 0, %StateFile%, State, Strategy
+        IniDelete, %StateFile%, State, StartCoins
+        IniDelete, %StateFile%, State, StartGems
+        IniDelete, %StateFile%, State, Coins
+        IniDelete, %StateFile%, State, Gems
+        IniDelete, %StateFile%, State, TotalTriumphs
+        IniDelete, %StateFile%, State, TotalLosses
         SafeReload()
         return
     }
@@ -573,7 +488,7 @@ OpenSettings:
     Gui, Add, Text, x345 y23 w150 h20 Right, Created by Darksen
     
     Gui, Font, s10 w600 c3A86FF, Bahnschrift
-    Gui, Add, Text, x25 y60 w220, HOTKEYS
+    Gui, Add, Text, x25 y60 w220, KEYBINDS
     
     Gui, Font, s9 w400 cA0A0A0
     Gui, Add, Text, x25 y90 w150 h20, Commander (Call of Arms):
@@ -605,33 +520,38 @@ OpenSettings:
     GuiControl, ChooseString, TimeScaleMode, %TimeScaleMode%
     Gui, Font, s8 w600 cFFFFFF
     Gui, Add, Button, x425 y86 w70 h22 gHelpTimeScale, INFO
-
-    Gui, Add, Progress, x25 y200 w470 h1 Background333333, 0
+    
+    Gui, Font, s9 w400 cA0A0A0
+    Gui, Add, Checkbox, x275 y126 vPotatoMode Checked%PotatoMode%, Potato Mode
+    Gui, Font, s9 w600 cFFFFFF
+    Gui, Add, Button, x365 y124 w18 h18 gHelpPotatoMode, ?
 
     Gui, Font, s9 w400 cA0A0A0
-    Gui, Add, Text, x25 y215 w200, VIP Server Link:
+    Gui, Add, CheckBox, x275 y154 w195 vAutoCameraCheck Checked%AutoCameraCheck%, Auto camera correction
+
+    Gui, Add, Progress, x25 y235 w470 h1 Background333333, 0
+
+    Gui, Font, s9 w400 cA0A0A0
+    Gui, Add, Text, x25 y250 w200, VIP Server Link:
     Gui, Font, s9 w400 cFFFFFF
-    Gui, Add, Edit, x25 y235 w470 h24 vVipLink -E0x200 gCheckVipLink, %VipLink%
+    Gui, Add, Edit, x25 y270 w470 h24 vVipLink -E0x200 gCheckVipLink, %VipLink%
 
-    vVal := UseVipServer
-    Gui, Add, Checkbox, x25 y275 w16 h16 vUseVipServer Checked%vVal% gCheckVipLink
+    Gui, Add, Checkbox, x25 y310 w16 h16 vUseVipServer Checked%UseVipServer% gCheckVipLink
     Gui, Font, s9 w400 cA0A0A0
-    Gui, Add, Text, x47 y276 gClickVipLabel, Use VIP Server
+    Gui, Add, Text, x47 y311 gClickVipLabel, Use VIP Server
 
-    dcChecked := DebugConsole
-    Gui, Add, Checkbox, x145 y275 w16 h16 vDebugConsole Checked%dcChecked%
+    Gui, Add, Checkbox, x145 y310 w16 h16 vDebugConsole Checked%DebugConsole%
     Gui, Font, s9 w400 c4CAF50 
-    Gui, Add, Text, x167 y276 gClickDebugLabel, Debug Console
-
-    Gui, Add, CheckBox, x265 y275 w195 vAutoCameraCheck Checked%AutoCameraCheck%, Auto camera correction
+    Gui, Add, Text, x167 y311 gClickDebugLabel, Debug Console
 
     Gui, Font, s9 w600 cFFFFFF
-    Gui, Add, Button, x25 y315 w150 h35 gOpenWebhookSettings, ⚙ WEBHOOK
-    Gui, Add, Button, x190 y315 w305 h35 gSaveSettings Default, SAVE CHANGES
+    Gui, Add, Button, x25 y350 w150 h35 gOpenWebhookSettings, ⚙ WEBHOOK
+    Gui, Add, Button, x190 y350 w305 h35 gSaveSettings Default, SAVE CHANGES
     
     GoSub, CheckVipLink
-    Gui, Show, w520 h375, Hotkey & TimeScale Settings
+    Gui, Show, w520 h410, Settings
 return
+
 
 ClickVipLabel:
     Gui, Settings:Submit, NoHide
@@ -721,6 +641,7 @@ SaveSettings:
     IniWrite, %UseVipServer%, %SettingsFile%, Options, UseVipServer
     IniWrite, %DebugConsole%, %SettingsFile%, Options, DebugConsole
     IniWrite, %AutoCameraCheck%, %SettingsFile%, Options, AutoCameraCheck
+    IniWrite, %PotatoMode%, %SettingsFile%, Options, PotatoMode
 
     if (TimeScaleMode = "1.5x") {
         UseTimeScale := true, TimeScaleMultiplier := 1.5
@@ -739,6 +660,7 @@ SaveSettings:
     Gui, WebhookSettings:Submit, NoHide
     IniWrite, %WebhookEnabled%, %SettingsFile%, Webhook, Enabled
     IniWrite, %WebhookLink%, %SettingsFile%, Webhook, Link
+    IniWrite, %SendCurrenciesEnabled%, %SettingsFile%, Webhook, SendCurrencies
 
     Gui, Settings:Destroy
     Gui, WebhookSettings:Destroy
@@ -763,6 +685,10 @@ OpenWebhookSettings:
     Gui, Font, s10 w400 c888888
     webhookChecked := WebhookEnabled
     Gui, Add, Checkbox, x20 y95 vWebhookEnabled gEnableWebhook Checked%webhookChecked%, Use webhook
+
+    sendCurrChecked := SendCurrenciesEnabled
+    Gui, Add, Checkbox, x140 y95 vSendCurrenciesEnabled Checked%sendCurrChecked%, Send Currencies
+    Gui, Add, Button, x263 y95 w18 h18 gHelpSendCurrencies, ?
 
     Gui, Font, s11 w600 cFFFFFF
     Gui, Add, Button, x20 y135 w300 h40 gCloseWebhookSettings Default, CLOSE
@@ -820,9 +746,14 @@ HelpCaravan:
 ModernMsgBox("Info", "Configure hotkey for the 'Support Caravan'.", "OK", "Blue")
 return
 HelpTimeScale:
-    ModernMsgBox("TimeScale Info", "1.5x — more stable and recommended for most cases.`n2x — requires special strategies but is much more effective.", "OK", "Blue")
+    ModernMsgBox("Timescale Info", "1.5x — more stable and recommended for most cases.`n2x — requires special strategies but is much more effective.`n`nThis will automatically turn off if you run out of timescale tickets.", "OK", "Blue")
 return
-
+HelpPotatoMode:
+    ModernMsgBox("Info", "Turn this on if you have lags.", "OK", "Blue")
+Return
+HelpSendCurrencies:
+    ModernMsgBox("Info", "This may be buggy.", "OK", "Blue")
+Return
 
 SettingsGuiEscape:
     Gui, Settings:Destroy
@@ -928,7 +859,7 @@ ShowSettingsGUI() {
 
         LogToConsole("Recording started:")
         LogToConsole("- Mouse Wheel Button: place tower")
-        LogToConsole("- Ctrl+U: upgrade")
+        LogToConsole("- U while hovering over the tower indicator: upgrade")
         LogToConsole("- Ctrl+D: set DJ track")
         LogToConsole("- Ctrl+T: Align Camera")
         LogToConsole("- Ctrl+X: Sell Tower")
@@ -936,7 +867,7 @@ ShowSettingsGUI() {
         LogToConsole("- Ctrl+X: Sell tower")
         LogToConsole("- Ctrl+Alt+A: Record Inputs")
 
-        ModernMsgBox("Recording", "Recording enabled:`n- MButton: place tower`n- Ctrl+U: upgrade`n- Ctrl+D: set DJ track`n- Ctrl+T: Align Camera`n- Ctrl+B: Delete tower (Cancel)`n- Ctrl+X: Sell tower`n- Ctrl+Alt+A: Record Inputs", "OK", "Blue")
+        ModernMsgBox("Recording", "Recording enabled:`n- MButton: place tower`n- U: upgrade`n- Ctrl+D: set DJ track`n- Ctrl+T: Align Camera`n- Ctrl+B: Delete tower (Cancel)`n- Ctrl+X: Sell tower`n- Ctrl+Alt+A: Record Inputs", "OK", "Blue")
     return
 
     StrategySettingsCancel:
@@ -970,7 +901,10 @@ MButton::
     LogToConsole("Recorded tower " . towerID . " (slot " . slot . ")")
 return
 
-^u::
+~u::
+    if (!Recording)
+        return
+        
     MouseGetPos, mx, my
     closestID := FindClosestTower(mx, my)
     if (closestID != "") {
@@ -1308,7 +1242,7 @@ RunStrategy() {
     } else {
         AutorunStartTime := checkStart
     }
-
+    
     if (difficulty != "Hardcore" and difficulty != "Voidcore")
         CheckRestartForNormalGames()
     else
@@ -1495,6 +1429,7 @@ CheckRestartForNormalGames() {
         
         if (ErrorLevel = 0) {
             IsRestarting := true
+            LogToConsole("Restarting the match")
             TargetX := FoundX + 40
             TargetY := FoundY + 10
             Click, %TargetX%, %TargetY%
@@ -1537,6 +1472,7 @@ CheckRestartForHardcore() {
         }
         if (ErrorLevel = 0) {
             IsRestarting := true
+            LogToConsole("Restarting the match")
             targetX := FoundX + 80
             targetY := FoundY + 20
             click, %targetX%, %targetY%
@@ -1671,6 +1607,10 @@ JoinGame(diff) {
         ImageSearch, FoundX, FoundY, 0, 0, A_ScreenWidth, A_ScreenHeight, *30 Resources\Play.png
         If (ErrorLevel = 0)
         {
+            if (WebhookEnabled && SendCurrenciesEnabled)
+            {
+                SendStatsToWebhook()
+            }
             Click, %FoundX%, %FoundY%
             break
         }
@@ -1766,7 +1706,6 @@ JoinGame(diff) {
 }
 
 JoinHardcore() {
-    StartTime := A_TickCount
     Loop
     {
         if (A_TickCount - StartTime > 5000) {
@@ -1776,11 +1715,16 @@ JoinHardcore() {
         ImageSearch, FoundX, FoundY, 0, 0, A_ScreenWidth, A_ScreenHeight, *30 Resources\Play.png
         If (ErrorLevel = 0)
         {
+            if (WebhookEnabled && SendCurrenciesEnabled)
+            {
+                SendStatsToWebhook()
+            }
             Click, %FoundX%, %FoundY%
             break
         }
         Sleep, 500
     }
+
     
     Sleep, 500
     StartTime := A_TickCount
@@ -1846,8 +1790,16 @@ SelectMap() {
 
     sleep, 1500
     if (AutoCameraCheck = 1) {
+        if (difficulty = "Hardcore" or difficulty = "Voidcore")
+        {
+            color1 := 0x9D64FF
+            color2 := 0x9664FF
+        } else {
+            color1 := 0x525BFF
+            color2 := 0x4044FF
+        }
         Loop, 10 {
-            PixelSearch, FoundX, FoundY, 656, 385, 1250, 308, 0x525BFF, 10, Fast
+            PixelSearch, FoundX, FoundY, 656, 385, 1250, 308, %color1%, 10, Fast
             
             if (ErrorLevel = 0) {
                 FoundColor := true
@@ -1859,7 +1811,7 @@ SelectMap() {
 
         if (!FoundColor) {
             Loop, 5 {
-            PixelSearch, FoundX, FoundY, 656, 385, 1250, 308, 0x4044FF, 5, Fast
+            PixelSearch, FoundX, FoundY, 656, 385, 1250, 308, %color2%, 5, Fast
             
             if (ErrorLevel = 0) {
                 FoundColor := true
@@ -1886,29 +1838,40 @@ SelectMap() {
 
     if (difficulty = "Hardcore" or difficulty = "Voidcore")
     {   
-        FoundColor := false
-
         Sleep, 200
         IfWinExist, ahk_exe RobloxPlayerBeta.exe
             WinActivate, ahk_exe RobloxPlayerBeta.exe
-        Sleep, 100
+        Sleep, 600
         
         SendEvent, {sc011 down} ; W down
-        Sleep, 2800
+        Sleep, 3000
         SendEvent, {sc011 up}
         Sleep, 300
         
-        TempSlotFile = %A_Temp%\tds_macro_slot.txt
-        FileDelete, %TempSlotFile%
-        
         LogToConsole("Trying to find: " map ". Please wait..")
 
-        Map_Detector = "%MapDetectorPath%" "slot" "%map%"
-        RunWait, %Map_Detector%, , Hide
-
-        FileRead, FoundSlot, %TempSlotFile%
-        FileDelete, %TempSlotFile%
-        FoundSlot := Trim(FoundSlot)
+        pBitmap := Gdip_BitmapFromScreen("0|0|635|" A_ScreenHeight)
+        result := ocrFromBitmap(pBitmap)
+        Gdip_DisposeImage(pBitmap)
+        if InStr(result, map) {
+            FoundSlot = 1
+        } else {
+            pBitmap := Gdip_BitmapFromScreen("635|0|332|" A_ScreenHeight)
+            result := ocrFromBitmap(pBitmap)
+            Gdip_DisposeImage(pBitmap)
+            if InStr(result, map) {
+                FoundSlot = 2
+            } else {
+                pBitmap := Gdip_BitmapFromScreen("967|0|332|" A_ScreenHeight)
+                result := ocrFromBitmap(pBitmap)
+                Gdip_DisposeImage(pBitmap)
+                if InStr(result, map) {
+                    FoundSlot = 3
+                } else {
+                    FoundSlot = 4
+                }
+            }
+        }
 
         if (FoundSlot = "" or FoundSlot = 0)
         {
@@ -1924,7 +1887,7 @@ SelectMap() {
         Sleep, 100
 
         SendEvent, {sc011 down} ; W 
-        Sleep, 1000 
+        Sleep, 800 
         SendEvent, {sc011 up}
         Sleep, 200
 
@@ -2000,23 +1963,12 @@ SelectMap() {
         pBitmap := Gdip_BitmapFromScreen("840|250|300|200")
         result := ocrFromBitmap(pBitmap)
         Gdip_DisposeImage(pBitmap)
-
-        if InStr(result, map) || InStr(result, "changed") {
-            changedMap := true
-            LogToConsole("Map successfully changed to " map)
-        }
         
         if InStr(result, "already") || InStr(result, "rotation") || InStr(result, "current") {
             LogToConsole(map " is already in the current rotation! Reloading..")
             Sleep, 200
             SafeReload()
             Sleep, 400
-        }
-
-        if (!changedMap) {
-            LogToConsole("Failed to change the map! Reloading..")
-            Sleep, 200
-            SafeReload()
         }
         
         if (modifiers != "") {
@@ -2141,13 +2093,12 @@ LoadGame() {
                 LogToConsole("Applying timescale: " TimeScaleMode)
                 Click, %TimescaleX%, %TimescaleY%
                 Sleep, 500
-                PixelSearch, ErrX, ErrY, 840, 250, 1100, 450, 0x0000EC, 0, Fast
-                if (ErrorLevel = 0) {
-                    UseTimeScale := false
-                    TimeScaleMultiplier := 1
-                    TimeScaleMode := "OFF"
-                    IniWrite, %TimeScaleMode%, %SettingsFile%, Options, TimeScaleMode
-                } else {
+
+                pBitmap := Gdip_BitmapFromScreen("872|593|230|100")
+                result := ocrFromBitmap(pBitmap)
+                Gdip_DisposeImage(pBitmap)
+
+                if InStr(result, "Confirm") || InStr(result, "confirm") {
                     if (TimeScaleMode = "2x") {
                         Click, 960, 631
                         Sleep, 300
@@ -2161,6 +2112,15 @@ LoadGame() {
                         Click, %TimescaleX%, %TimescaleY%
                         Sleep, 300
                     }
+                } else {
+                    UseTimeScale := false
+                    TimeScaleMultiplier := 1
+                    TimeScaleMode := "OFF"
+                    IniWrite, %TimeScaleMode%, %SettingsFile%, Options, TimeScaleMode
+
+                    Click, 955, 686
+                    LogToConsole("Failed to activate timescale! You are out of tickets.")
+                    Sleep, 300
                 }
             }
             PixelSearch, ClickX, ClickY, 691, 153, 1191, 260, 0x00EB2B, 3, Fast
@@ -2175,26 +2135,28 @@ LoadGame() {
 
 AlignCamera() {
     global MoveEnabled, MoveDirection, MoveDuration, IsRestarting
-    LogToConsole("Aligning camera")
-    MouseMove, 1339, 236
-    Sleep, 50
-    Click, Right, Down
-    MouseMove, 1339, 1200
-    Sleep, 50
-    Click, Right, Up
-    Sleep, 200
-    Send, {o down}
-    Sleep, 500
-    Send, {o up}
-    sleep, 200
-    Send, {o down}
-    Sleep, 500
-    Send, {o up}
-    Sleep, 200
-    if (MoveEnabled && !IsRestarting) {
-        Send {%MoveDirection% down}
-        Sleep, %MoveDuration%
-        Send {%MoveDirection% up}
+    if (!IsRestarting) {
+        LogToConsole("Aligning camera")
+        MouseMove, 1339, 236
+        Sleep, 50
+        Click, Right, Down
+        MouseMove, 1339, 1200
+        Sleep, 50
+        Click, Right, Up
+        Sleep, 200
+        Send, {o down}
+        Sleep, 500
+        Send, {o up}
+        sleep, 200
+        Send, {o down}
+        Sleep, 500
+        Send, {o up}
+        Sleep, 200
+        if (MoveEnabled && !IsRestarting) {
+            Send {%MoveDirection% down}
+            Sleep, %MoveDuration%
+            Send {%MoveDirection% up}
+        }
     }
 }
 
@@ -2229,7 +2191,7 @@ SpawnTower(X, Y, slotNumber, towerID) {
 
             If (ErrorLevel)
             {
-                pBitmap := Gdip_BitmapFromScreen("725|709|400|200")
+                pBitmap := Gdip_BitmapFromScreen("700|600|400|200")
                 result := ocrFromBitmap(pBitmap)
                 Gdip_DisposeImage(pBitmap)
 
@@ -2339,13 +2301,9 @@ UpgradeTower(towerID, skipOpen := false, totalUpgrades := 1, path := 0, pathLeve
 
         if (ErrorLevel) {
             attempts++
-            if (attempts > 25) {
-                LogToConsole("ERROR: Tower " towerID " menu not found, respawning...")
-                SpawnTower(targetX, targetY, Towers[towerID].slot, towerID)
-                attempts := 0
-                Click, %targetX%, %targetY%
-                Sleep, 150
-                Continue
+            if (attempts > 30) {
+                LogToConsole("ERROR: Tower " towerID " menu not found, reloading...")
+                SafeReload()
             } else {
                 Random, VariationY, -8, 8
                 shiftedY := targetY + VariationY
@@ -2378,7 +2336,11 @@ UpgradeTower(towerID, skipOpen := false, totalUpgrades := 1, path := 0, pathLeve
             upgradeAttempts := 0
             Loop {
                 Click, %UpgradeX%, %UpgradeY%
-                Sleep, 250
+                If (PotatoMode = 1) {
+                    Sleep, 300
+                } Else {
+                    Sleep, 100
+                }
                 break
             }
             
@@ -2907,6 +2869,170 @@ SendToWebhook(message) {
         SetTimer, ProcessWebhookQueue, -100
     }
 }
+
+SendStatsToWebhook() {
+    global WebhookLink, StateFile, AutorunStartTime
+
+    gemFound := false
+    coinFound := false
+    StartTime := A_TickCount
+    
+    loop
+    {
+        ImageSearch, GemX, GemY, 0, 0, A_ScreenWidth, A_ScreenHeight, *30 Resources\gem.png
+        if (ErrorLevel = 0)
+        {
+            gemFound := true
+        }
+
+        ImageSearch, CoinX, CoinY, 0, 0, A_ScreenWidth, A_ScreenHeight, *30 Resources\coin.png
+        if (ErrorLevel = 0)
+        {
+            coinFound := true
+        }
+
+        if (coinFound && gemFound) {
+            break
+        }
+        
+        if (A_TickCount - StartTime > 15000)
+        {
+            break
+        }
+        
+        Sleep, 500
+    }
+    
+    if (coinFound && gemFound)
+    {
+        Sleep, 500
+        
+        AreaW := 400
+        AreaH := 80
+        CalcY := GemY - 30
+        SearchArea := "66|" . CalcY . "|" . AreaW . "|" . AreaH
+        pBitmapGem := Gdip_BitmapFromScreen(SearchArea)
+        
+        pBitmapGemResized := Gdip_CreateBitmap(AreaW * 3, AreaH * 3)
+        G1 := Gdip_GraphicsFromImage(pBitmapGemResized)
+        DllCall("gdiplus\GdipSetInterpolationMode", "Ptr", G1, "Int", 7)
+        Gdip_DrawImage(G1, pBitmapGem, 0, 0, AreaW * 3, AreaH * 3, 0, 0, AreaW, AreaH)
+
+        GEMresult := ocrFromBitmap(pBitmapGemResized)
+        
+        Gdip_DeleteGraphics(G1)
+        Gdip_DisposeImage(pBitmapGemResized)
+        Gdip_DisposeImage(pBitmapGem)
+        
+        LogToConsole(CalcY " " CalcY+AreaH)
+
+        AreaW := 400
+        AreaH := 75
+        CalcY := CoinY - 30
+        SearchArea := "66|" . CalcY . "|" . AreaW . "|" . AreaH
+        pBitmapCoin := Gdip_BitmapFromScreen(SearchArea)
+        
+        pBitmapCoinResized := Gdip_CreateBitmap(AreaW * 3, AreaH * 3)
+        G2 := Gdip_GraphicsFromImage(pBitmapCoinResized)
+        DllCall("gdiplus\GdipSetInterpolationMode", "Ptr", G2, "Int", 7)
+        Gdip_DrawImage(G2, pBitmapCoin, 0, 0, AreaW * 3, AreaH * 3, 0, 0, AreaW, AreaH)
+        
+        COINresult := ocrFromBitmap(pBitmapCoinResized)
+        
+        G2 := Gdip_DeleteGraphics(G2)
+        Gdip_DisposeImage(pBitmapCoinResized)
+        Gdip_DisposeImage(pBitmapCoin)
+
+        coinVal := ""
+        gemVal := ""
+        
+        cleanGemText := StrReplace(GEMresult, ",", "")
+        cleanGemText := StrReplace(cleanGemText, "`n", " ")
+        cleanGemText := StrReplace(cleanGemText, "`r", " ")
+        
+        cleanCoinText := StrReplace(COINresult, ",", "")
+        cleanCoinText := StrReplace(cleanCoinText, "`n", " ")
+        cleanCoinText := StrReplace(cleanCoinText, "`r", " ")
+        
+        Pos := 1
+        while (Pos := RegExMatch(cleanGemText, "\d", match, Pos))
+        {
+            gemVal .= match
+            Pos += 1
+        }
+        
+        Pos := 1
+        while (Pos := RegExMatch(cleanCoinText, "\d", match, Pos))
+        {
+            coinVal .= match
+            Pos += 1
+        }
+
+        if (coinVal = "")
+            coinVal := "0"
+        if (gemVal = "")
+            gemVal := "0"
+
+        IniRead, checkStartCoins, %StateFile%, State, StartCoins, 0
+        if (checkStartCoins = 0) {
+            IniWrite, %coinVal%, %StateFile%, State, StartCoins
+            IniWrite, %gemVal%, %StateFile%, State, StartGems
+        }
+        
+        IniWrite, %coinVal%, %StateFile%, State, Coins
+        IniWrite, %gemVal%, %StateFile%, State, Gems
+        
+        IniRead, startCoins, %StateFile%, State, StartCoins, 0
+        IniRead, startGems, %StateFile%, State, StartGems, 0
+        earnedCoins := coinVal - startCoins
+        earnedGems := gemVal - startGems
+        
+        if (AutorunStartTime > 0) {
+            elapsedMs := A_TickCount - AutorunStartTime
+            elapsedHours := elapsedMs / 3600000
+            
+            if (elapsedHours > 0.001) {
+                coinsPerHour := Round(earnedCoins / elapsedHours)
+                gemsPerHour := Round(earnedGems / elapsedHours)
+            } else {
+                coinsPerHour := 0
+                gemsPerHour := 0
+            }
+        } else {
+            coinsPerHour := 0
+            gemsPerHour := 0
+        }
+        
+        IniRead, totalTriumphs, %StateFile%, State, TotalTriumphs, 0
+        IniRead, totalLosses, %StateFile%, State, TotalLosses, 0
+
+        description := "Coins: " . coinVal . " (+" . earnedCoins . ")`n"
+        description .= "Gems: " . gemVal . " (+" . earnedGems . ")`n"
+        description .= "Total Triumphs: " . totalTriumphs . ", Total Losses: " . totalLosses . "`n"
+        description .= "`n"
+        description .= "📊 " . coinsPerHour . " Coins/hr | " . gemsPerHour . " Gems/hr"
+        
+        description := StrReplace(description, "\", "\\")
+        description := StrReplace(description, """", "\""")
+        description := StrReplace(description, "`n", "\n")
+
+        jsonPayload := "{"
+        jsonPayload .= """embeds"": [{"
+        jsonPayload .= """title"": ""Currencies"","
+        jsonPayload .= """description"": """ . description . ""","
+        jsonPayload .= """color"": 5814783"
+        jsonPayload .= "}]}"
+        
+        try {
+            whr := ComObjCreate("WinHttp.WinHttpRequest.5.1")
+            whr.Open("POST", WebhookLink, false)
+            whr.SetRequestHeader("Content-Type", "application/json")
+            whr.Send(jsonPayload)
+        } catch e {
+        }
+    }
+}
+
 
 ProcessWebhookQueue:
     global WebhookQueue, WebhookTimerActive, WebhookLink, ver
