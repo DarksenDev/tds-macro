@@ -1,4 +1,4 @@
-﻿; Tower Defense Simulator Macro by Darksen
+; Tower Defense Simulator Macro by Darksen
 ;   Free for anyone to use
 ;   Modifications are welcome, however stealing credit is not.
 ;   You can add your name, but my original credit must remain.
@@ -22,7 +22,7 @@ if (RegExMatch(A_ScriptDir,"\.zip")){
 #Include %A_ScriptDir%\lib\Gdip_All.ahk
 #Include %A_ScriptDir%\lib\ocr.ahk
 
-ver := "1.2.2" 
+ver := "1.2.2a" 
 
 pToken := Gdip_Startup()
 OnExit, CleanupGdip
@@ -832,7 +832,7 @@ ShowSettingsGUI() {
     StrategySettingsOK:
         Gui, StrategySettings:Submit
         map := Map
-        difficulty := Difficulty
+        difficulty := Difficultyq
         requiredTowers := RequiredTowers
         autoChain := AutoChain ? "ON" : "OFF"
         autoCaravan := AutoCaravan ? "ON" : "OFF"
@@ -1415,7 +1415,7 @@ ExecuteStep(step) {
 ;}
 
 CheckRestartForNormalGames() {
-    global MoveEnabled, MoveDirection, MoveDuration, IsRestarting, difficulty, IsPlayingAgain
+    global MoveEnabled, MoveDirection, MoveDuration, IsRestarting, difficulty
     processName := "ahk_exe RobloxPlayerBeta.exe"
     
     if WinExist(processName) {
@@ -1423,11 +1423,18 @@ CheckRestartForNormalGames() {
         Sleep, 1500
         
         ImageSearch, FoundX, FoundY, 0, 0, A_ScreenWidth, A_ScreenHeight, *40 Resources\Restart.png
-        if (ErrorLevel = 1) {
-            ImageSearch, FoundX, FoundY, 0, 0, A_ScreenWidth, A_ScreenHeight, *40 Resources\Restart2.png
+        foundRestart := (ErrorLevel = 0 && FoundX > 0 && FoundY > 0)
+        
+        if (!foundRestart) {
+            ImageSearch, FoundX2, FoundY2, 0, 0, A_ScreenWidth, A_ScreenHeight, *40 Resources\Restart2.png
+            foundRestart := (ErrorLevel = 0 && FoundX2 > 0 && FoundY2 > 0)
+            if (foundRestart) {
+                FoundX := FoundX2
+                FoundY := FoundY2
+            }
         }
         
-        if (ErrorLevel = 0) {
+        if (foundRestart) {
             IsRestarting := true
             LogToConsole("Restarting the match")
             TargetX := FoundX + 40
@@ -1435,13 +1442,21 @@ CheckRestartForNormalGames() {
             Click, %TargetX%, %TargetY%
             Sleep, 150
             Return
-        } 
+        }
         
         ImageSearch, FoundX, FoundY, 0, 0, A_ScreenWidth, A_ScreenHeight, *40 Resources\PlayAgain.png
-        if (ErrorLevel = 1) {
-            ImageSearch, FoundX, FoundY, 0, 0, A_ScreenWidth, A_ScreenHeight, *40 Resources\PlayAgain2.png
+        foundPlayAgain := (ErrorLevel = 0 && FoundX > 0 && FoundY > 0)
+        
+        if (!foundPlayAgain) {
+            ImageSearch, FoundX3, FoundY3, 0, 0, A_ScreenWidth, A_ScreenHeight, *40 Resources\PlayAgain2.png
+            foundPlayAgain := (ErrorLevel = 0 && FoundX3 > 0 && FoundY3 > 0)
+            if (foundPlayAgain) {
+                FoundX := FoundX3
+                FoundY := FoundY3
+            }
         }
-        if (ErrorLevel = 0) {
+        
+        if (foundPlayAgain) {
             TargetX := FoundX + 40
             TargetY := FoundY + 10
             Click, %TargetX%, %TargetY%
@@ -1456,26 +1471,35 @@ CheckRestartForNormalGames() {
     JoinGame(difficulty)
 }
 
-
-
 CheckRestartForHardcore() {
+    global IsRestarting
     if WinExist("ahk_exe RobloxPlayerBeta.exe") {
         WinActivate, ahk_exe RobloxPlayerBeta.exe
-        sleep, 1500
+        Sleep, 1500
+        
         ImageSearch, FoundX, FoundY, 0, 0, A_ScreenWidth, A_ScreenHeight, *40 Resources\Restart.png
-        if ErrorLevel = 1
-            ImageSearch, FoundX, FoundY, 0, 0, A_ScreenWidth, A_ScreenHeight, *40 Resources\Restart2.png
-        if (ErrorLevel = 1) {
+        foundRestart := (ErrorLevel = 0 && FoundX > 0 && FoundY > 0)
+        
+        if (!foundRestart) {
+            ImageSearch, FoundX2, FoundY2, 0, 0, A_ScreenWidth, A_ScreenHeight, *40 Resources\Restart2.png
+            foundRestart := (ErrorLevel = 0 && FoundX2 > 0 && FoundY2 > 0)
+            if (foundRestart) {
+                FoundX := FoundX2
+                FoundY := FoundY2
+            }
+        }
+        
+        if (!foundRestart) {
             IsRestarting := false
             RunRoblox()
             JoinHardcore()
-        }
-        if (ErrorLevel = 0) {
+        } else {
             IsRestarting := true
             LogToConsole("Restarting the match")
-            targetX := FoundX + 80
-            targetY := FoundY + 20
-            click, %targetX%, %targetY%
+            TargetX := FoundX + 40
+            TargetY := FoundY + 10
+            Click, %TargetX%, %TargetY%
+            Sleep, 150
         }
     } else {
         IsRestarting := false
@@ -2077,7 +2101,6 @@ LoadGame() {
     Loop {
         PixelSearch, FoundX, FoundY, 691, 153, 1191, 260, 0x00EB2B, 3, Fast
         if (ErrorLevel = 0) {
-            LogToConsole("Successfully joined the map: " map)
             Sleep, 300
             AlignCamera()
             Sleep, 500
