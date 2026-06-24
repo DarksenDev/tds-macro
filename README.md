@@ -20,7 +20,6 @@ Started on March 30, 2026. My friend bet me that I wouldn't make a macro for TDS
   - Screen Shake: Disabled
   - Prefer Vertical Upgrades: Disabled
   - No custom fonts
-  - Chat must be closed
 
 # Installation
 
