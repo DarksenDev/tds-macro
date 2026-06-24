@@ -85,6 +85,13 @@ RestartMain() {
     global MainPID, SettingsFile
     Process, Close, %MainPID%
 
+    for process in ComObjGet("winmgmts:").ExecQuery("SELECT * FROM Win32_Process WHERE Name = 'AutoHotkey.exe' OR Name = 'AutoHotkeyU64.exe' OR Name = 'AutoHotkeyU32.exe'") {
+    cmd := process.CommandLine
+    if (InStr(cmd, "Main.ahk")) {
+        Process, Close, % process.ProcessId
+        }
+    }
+
     IniRead, WebhookLink, %SettingsFile%, Webhook, Link, %A_Space%
     IniRead, tempWebhook, %SettingsFile%, Webhook, Enabled, OFF
     WebhookEnabled := (tempWebhook = "1") ? true : false

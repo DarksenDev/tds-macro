@@ -129,9 +129,9 @@ SendCurrencies(matchResult := "")
         return
     }
     
-    AreaW := 400
-    AreaH := 200
-    SearchArea := "638|540|" . AreaW . "|" . AreaH
+    AreaW := 420
+    AreaH := 230
+    SearchArea := "600|540|" . AreaW . "|" . AreaH
     
     pBitmapArea := Gdip_BitmapFromScreen(SearchArea)
     
@@ -139,7 +139,7 @@ SendCurrencies(matchResult := "")
     G1 := Gdip_GraphicsFromImage(pBitmapResized)
     DllCall("gdiplus\GdipSetInterpolationMode", "Ptr", G1, "Int", 7)
     Gdip_DrawImage(G1, pBitmapArea, 0, 0, AreaW * 3, AreaH * 3, 0, 0, AreaW, AreaH)
-    
+
     ocrResult := ocrFromBitmap(pBitmapResized)
     
     Gdip_DeleteGraphics(G1)
@@ -157,6 +157,7 @@ SendCurrencies(matchResult := "")
     
     IniRead, totalTriumphs, %StateFile%, State, TotalTriumphs, 0
     IniRead, totalLosses, %StateFile%, State, TotalLosses, 0
+    IniRead, totalUnidentified, %StateFile%, State, TotalUnidentified, 0
     
     if (matchResult = "Triumph")
     {
@@ -167,6 +168,10 @@ SendCurrencies(matchResult := "")
     {
         totalLosses += 1
         IniWrite, %totalLosses%, %StateFile%, State, TotalLosses
+    } else if (matchResult = "Unknown" or matchResult = "")
+    {
+        totalUnidentified += 1
+        IniWrite, %totalUnidentified%, %StateFile%, State, TotalUnidentified
     }
     
     IniRead, startCoins, %StateFile%, State, StartCoins, 0
@@ -195,10 +200,13 @@ SendCurrencies(matchResult := "")
         coinsPerHour := 0
         gemsPerHour := 0
     }
+
+    totalMatches := totalTriumphs + totalLosses + totalUnidentified
     
     description := "Coins: " . totalCoins . " (+" . earnedCoins . ")`n"
     description .= "Gems: " . totalGems . " (+" . earnedGems . ")`n"
-    description .= "Total Triumphs: " . totalTriumphs . ", Total Losses: " . totalLosses . "`n"
+    description .= "Matches played: " . totalMatches . "`n"
+    description .= "Triumphs: " . totalTriumphs . " | Losses: " . totalLosses . " | Unidentified: " . totalUnidentified . "`n"
     description .= "`n"
     description .= "📊 " . coinsPerHour . " Coins/hr | " . gemsPerHour . " Gems/hr"
     
