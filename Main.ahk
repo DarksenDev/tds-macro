@@ -23,7 +23,7 @@ if (RegExMatch(A_ScriptDir,"\.zip")){
 #Include %A_ScriptDir%\lib\ocr.ahk
 #Include %A_ScriptDir%\lib\Gdip_ImageSearch.ahk
 
-ver := "1.2.6" 
+ver := "1.2.7" 
 
 pToken := Gdip_Startup()
 OnExit, CleanupGdip
@@ -38,6 +38,7 @@ global WebhookQueue := []
 global WebhookTimerActive := false
 global WebhookLink := ""
 global WebhookEnabled := false
+global WebhookDebugLogs := true
 
 IfNotExist, %AppDataOpt%
     FileCreateDir, %AppDataOpt%
@@ -52,6 +53,7 @@ IniRead, WebhookLink, %SettingsFile%, Webhook, Link, %A_Space%
 IniRead, WebhookEnabled, %SettingsFile%, Webhook, Enabled, 0
 IniRead, PotatoMode, %SettingsFile%, Options, PotatoMode, 1
 IniRead, SendCurrenciesEnabled, %SettingsFile%, Webhook, SendCurrencies, 1
+IniRead, WebhookDebugLogs, %SettingsFile%, Webhook, DebugLogs, 1
 IniRead, UseRestartBtn, %SettingsFile%, Options, UseRestartBtn, 1
 IniRead, UsePlayAgainBtn, %SettingsFile%, Options, UsePlayAgainBtn, 1
 
@@ -692,6 +694,7 @@ SaveSettings:
     IniWrite, %WebhookEnabled%, %SettingsFile%, Webhook, Enabled
     IniWrite, %WebhookLink%, %SettingsFile%, Webhook, Link
     IniWrite, %SendCurrenciesEnabled%, %SettingsFile%, Webhook, SendCurrencies
+    IniWrite, %WebhookDebugLogs%, %SettingsFile%, Webhook, DebugLogs
 
     Gui, Settings:Destroy
     Gui, WebhookSettings:Destroy
@@ -721,10 +724,13 @@ OpenWebhookSettings:
     Gui, Add, Checkbox, x140 y95 vSendCurrenciesEnabled Checked%sendCurrChecked%, Send Currencies
     Gui, Add, Button, x263 y95 w18 h18 gHelpSendCurrencies, ?
 
-    Gui, Font, s11 w600 cFFFFFF
-    Gui, Add, Button, x20 y135 w300 h40 gCloseWebhookSettings Default, CLOSE
+    debugLogsChecked := WebhookDebugLogs
+    Gui, Add, Checkbox, x20 y125 vWebhookDebugLogs Checked%debugLogsChecked%, Debug Logs
     
-    Gui, Show, w340 h200, Webhook Settings
+    Gui, Font, s11 w600 cFFFFFF
+    Gui, Add, Button, x20 y165 w300 h40 gCloseWebhookSettings Default, CLOSE
+    
+    Gui, Show, w340 h230, Webhook Settings
 Return
 
 CheckWebhookLink:
@@ -2166,8 +2172,8 @@ SelectMap() {
     }
 
     FoundMap := false
-
-        if (FileExist("Resources\" . map . ".png"))
+        ; With fog it's temporary solution for map recognizing
+        if ( FileExist("Resources\" . map . ".png") && not InStr(modifiers, "fog", false) )
         {
             FoundMap := false
             Loop, 5 {
@@ -3020,7 +3026,7 @@ LogToConsole(text, SendWebhookInstantly := false) {
     if (OverlayHWND && WinExist("ahk_id " OverlayHWND))
         UpdateOverlay()
     
-    if (WebhookEnabled && WebhookLink != "" && RunningStrategy) {
+    if (WebhookEnabled && WebhookLink != "" && RunningStrategy && WebhookDebugLogs) {
         if (AutorunStartTime > 0) {
             runtime := FormatRuntime(AutorunStartTime)
             webhookText := "[" . runtime . "] " . text
