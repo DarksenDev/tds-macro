@@ -21,16 +21,16 @@ moveDirection=W
 moveDuration=950
 
 [Steps]
-SpawnTower(883, 364, 1, 1)
+SpawnTower(881, 364, 1, 1)
 UpgradeTower(1)
 UpgradeTower(1)
 SpawnTower(983, 364, 1, 2)
 UpgradeTower(2)
 UpgradeTower(2)
-SpawnTower(885, 413, 1, 3)
+SpawnTower(881, 413, 1, 3)
 UpgradeTower(3)
 UpgradeTower(3)
-SpawnTower(981, 412, 1, 4)
+SpawnTower(983, 412, 1, 4)
 UpgradeTower(4)
 UpgradeTower(4)
 SpawnTower(842, 391, 1, 5)
