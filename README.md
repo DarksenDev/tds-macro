@@ -1,5 +1,5 @@
 # Tower Defense Simulator Macro by Darksen   
-Started on March 30, 2026. My friend bet me that I wouldn't make a macro for TDS, but I did. Now he doesn't play TDS 😂
+Started on March 30, 2026. My friend bet me that I wouldn't make a macro for TDS, but I did.
 
 # Features:
  - Record & Play strategies - Record your tower placements, upgrades, and actions, then replay them automatically
