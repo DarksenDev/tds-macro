@@ -20,6 +20,10 @@ moveEnabled=1
 moveDirection=W
 moveDuration=950
 
+[DO NOT EDIT]
+width=1920
+height=1009
+
 [Steps]
 SpawnTower(881, 364, 1, 1)
 UpgradeTower(1)
