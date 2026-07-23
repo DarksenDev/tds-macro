@@ -1,0 +1,43 @@
+[Info]
+title=Minigunner Hardcore Suicide Strat
+author=darksen
+desc=Modifiers are NOT recommended, timescale optional.
+income=300-600 gems per hour
+time=3-4 minutes
+
+[Settings]
+map=Wretched Front
+difficulty=Hardcore
+requiredTowers=Minigunner
+modifiers=
+chainInterval=20
+caravanInterval=40
+autoChain=OFF
+autoCaravan=OFF
+autoDropTheBeat=OFF
+autoSkip=ON
+abilitySpam=OFF
+moveEnabled=0
+moveDirection=W
+moveDuration=5000
+
+[DO NOT EDIT]
+width=1920
+height=1009
+
+[Steps]
+SpawnTower(1057, 866, 1, Minigunner1)
+UpgradeTower(Minigunner1)
+UpgradeTower(Minigunner1)
+SpawnTower(997, 864, 1, Minigunner2)
+UpgradeTower(Minigunner2)
+UpgradeTower(Minigunner2)
+SpawnTower(1098, 818, 1, Minigunner3)
+UpgradeTower(Minigunner3)
+UpgradeTower(Minigunner3)
+SpawnTower(1122, 885, 1, Minigunner4)
+UpgradeTower(Minigunner4)
+UpgradeTower(Minigunner4)
+SpawnTower(932, 867, 1, Minigunner5)
+UpgradeTower(Minigunner5)
+UpgradeTower(Minigunner5)

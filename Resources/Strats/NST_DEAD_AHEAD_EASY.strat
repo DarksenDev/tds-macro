@@ -1,0 +1,68 @@
+[Info]
+title=Coin + Any Tower EXP Farm
+author=gall
+desc=Modifiers recommended, timescale optional.
+income=up to 6,000 coins per hour
+time=6-7 minutes
+
+[Settings]
+map=Dead Ahead
+difficulty=Easy
+requiredTowers=Militant, Scout
+modifiers=
+chainInterval=10
+caravanInterval=20
+autoChain=OFF
+autoCaravan=OFF
+autoDropTheBeat=OFF
+autoSkip=OFF
+moveEnabled=1
+moveDirection=W
+moveDuration=950
+
+[DO NOT EDIT]
+width=1920
+height=1009
+
+[Steps]
+SpawnTower(881, 364, 1, 1)
+UpgradeTower(1)
+UpgradeTower(1)
+SpawnTower(983, 364, 1, 2)
+UpgradeTower(2)
+UpgradeTower(2)
+SpawnTower(881, 413, 1, 3)
+UpgradeTower(3)
+UpgradeTower(3)
+SpawnTower(983, 412, 1, 4)
+UpgradeTower(4)
+UpgradeTower(4)
+SpawnTower(839, 391, 1, 5)
+UpgradeTower(5)
+UpgradeTower(5)
+SpawnTower(1029, 390, 1, 6)
+UpgradeTower(6)
+UpgradeTower(6)
+SpawnTower(1027, 439, 1, 7)
+UpgradeTower(7)
+UpgradeTower(7)
+SpawnTower(834, 440, 1, 8)
+UpgradeTower(8)
+UpgradeTower(8)
+UpgradeTower(8)
+UpgradeTower(3)
+UpgradeTower(5)
+UpgradeTower(1)
+UpgradeTower(7)
+UpgradeTower(4)
+UpgradeTower(6)
+UpgradeTower(2)
+SpawnTower(999, 496, 2, 9)
+UpgradeTower(7)
+UpgradeTower(4)
+UpgradeTower(6)
+UpgradeTower(2)
+UpgradeTower(3)
+UpgradeTower(8)
+UpgradeTower(1)
+UpgradeTower(5)
