@@ -1,0 +1,107 @@
+[Info]
+title=Suicide Gem / Jugg + Crook EXP
+author=m4rkin
+desc=Modifiers are NOT recommended, timescale optional.
+income=~1000 gems/h, ~1400 XP/h
+time=7-8 minutes
+
+[Settings]
+map=Wretched Front
+difficulty=Hardcore
+requiredTowers=Crook Boss, Boomerang, Farm, Juggernaut
+modifiers=
+chainInterval=10
+caravanInterval=20
+autoChain=OFF
+autoCaravan=OFF
+autoDropTheBeat=OFF
+autoSkip=ON
+moveEnabled=0
+moveDirection=W
+moveDuration=750
+
+[Steps]
+SpawnTower(592, 474, 3, 1)
+SpawnTower(609, 529, 3, 2)
+SpawnTower(629, 584, 3, 3)
+UpgradeTower(1)
+UpgradeTower(2)
+UpgradeTower(3)
+UpgradeTower(1)
+UpgradeTower(2)
+SpawnTower(1157, 948, 2, 4)
+UpgradeTower(3)
+UpgradeTower(4)
+SpawnTower(663, 634, 3, 5)
+UpgradeTower(5)
+UpgradeTower(5)
+UpgradeTower(4)
+SpawnTower(709, 675, 3, 6)
+UpgradeTower(6)
+UpgradeTower(1)
+UpgradeTower(2)
+UpgradeTower(4)
+UpgradeTower(3)
+UpgradeTower(5)
+UpgradeTower(6)
+UpgradeTower(6)
+SpawnTower(1100, 945, 1, 7)
+UpgradeTower(7)
+UpgradeTower(7)
+SpawnTower(545, 544, 3, 8)
+UpgradeTower(8)
+UpgradeTower(8)
+SpawnTower(559, 599, 3, 9)
+UpgradeTower(9)
+UpgradeTower(9)
+SpawnTower(590, 650, 3, 10)
+UpgradeTower(10)
+UpgradeTower(10)
+SpawnTower(617, 704, 3, 11)
+UpgradeTower(11)
+UpgradeTower(11)
+UpgradeTower(8)
+UpgradeTower(9)
+UpgradeTower(10)
+UpgradeTower(11)
+SpawnTower(555, 715, 3, 12)
+UpgradeTower(12)
+UpgradeTower(12)
+UpgradeTower(12)
+SpawnTower(1042, 941, 1, 13)
+UpgradeTower(13)
+UpgradeTower(13)
+SpawnTower(1157, 881, 2, 14)
+UpgradeTower(14)
+UpgradeTower(14)
+UpgradeTower(14)
+SpawnTower(984, 944, 1, 15)
+UpgradeTower(15)
+UpgradeTower(15)
+SpawnTower(984, 880, 1, 16)
+UpgradeTower(16)
+UpgradeTower(16)
+SpawnTower(1045, 877, 1, 17)
+UpgradeTower(17)
+UpgradeTower(17)
+SpawnTower(1213, 882, 2, 18)
+UpgradeTower(18)
+UpgradeTower(18)
+UpgradeTower(18)
+SpawnTower(1216, 942, 2, 19)
+UpgradeTower(19)
+UpgradeTower(19)
+UpgradeTower(19)
+SpawnTower(1246, 829, 2, 20)
+UpgradeTower(20)
+UpgradeTower(20)
+UpgradeTower(20)
+UpgradeTower(17)
+UpgradeTower(16)
+UpgradeTower(15)
+SpawnTower(1025, 766, 4, 21)
+UpgradeTower(4)
+UpgradeTower(19)
+UpgradeTower(18)
+UpgradeTower(14)
+UpgradeTower(20)
