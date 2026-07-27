@@ -1,3 +1,10 @@
+[Info]
+title=Bread Toaster
+author=minhbi2994 (original by Mangobird and Sucio)
+desc=High end grind strat. Requires Skill Tree. Operator must be Lv20, Juggernaut must be lv17+
+income=~8000 coins/h, ~3000 XP/h
+time=20 minutes
+
 [Settings]
 map=Dead ahead
 difficulty=Molten
