@@ -1,3 +1,10 @@
+[Info]
+title=98% W/R Frost
+author=oddly (original by Sucio)
+desc=Modifiers are recommended, timescale optional.
+income=~4000 coins/h, ~1200 XP/h, ~120 gems/h
+time=26-27 minutes
+
 [Settings]
 map=U-Turn
 difficulty=Frost
