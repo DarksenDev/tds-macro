@@ -9,11 +9,11 @@ Ultimate Macro is an advanced, fully-featured automation tool for Roblox Tower D
 * **Smart Game Handling** - Automatically detects game ends, checks the map, and uses the "Restart" or "Play Again" buttons to loop seamlessly.
 * **Strategy Rotation** - Automatically swap between two different strategies after a set amount of runs or minutes.
 * **Auto-Equip Towers** - The macro can automatically equip the required towers for your strategy before joining the match.
-* **Timescale Support** - Native support for 1.5x and 2x Timescale tickets to speed up your grinds.
+* **Timescale Support** - support for 1.5x and 2x Timescale tickets to speed up your grinds.
 * **Playtime Rewards** - Automatically navigates to the lobby and collects daily/playtime rewards when available.
 * **Advanced Discord Webhook** - Get real-time updates, currency stats, debug logs, and screenshots sent straight to your Discord server.
 * **Multiple Upgrade Paths** - Full support for split-path towers and special towers (Pursuit, Hacker, etc.).
-* **VIP Server Support** - Paste your private server link code to macro securely in your own server.
+* **VIP Server Support** - Paste your private server link code to macro in your own server.
 * And much more!
 
 ## Requirements
