@@ -1,5 +1,5 @@
 [Info]
-title=98% Win Rate Frost
+title=OUTDATED. GET STRATS FROM OUR DISCORD SERVER
 author=oddly (original by Sucio)
 desc=Modifiers are recommended, timescale optional.
 income=~4000 coins/h, ~120 gems/h
@@ -8,7 +8,7 @@ time=26-27 minutes
 [Settings]
 map=U-Turn
 difficulty=Frost
-requiredTowers=DJ, Turret, Engineer, Crook Boss, Accelerator
+requiredTowers=
 modifiers=Limitation,Exploding,Hidden,Glass,Committed
 chainInterval=10
 caravanInterval=20
